@@ -325,7 +325,7 @@ function App() {
               </h1>
               {!hasSearched && (
                 <p className="text-gray-400 text-sm sm:text-lg animate-fade-in px-4">
-                  AI-powered recommendations for your exact mood
+                  AI-powered recommendations.
                 </p>
               )}
             </div>
@@ -336,7 +336,7 @@ function App() {
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
                   <input
                     type="text"
-                    placeholder="(e.g., adventurous, romantic, thrilling...)"
+                    placeholder="(e.g., Comedy Action that features Tom Holland )"
                     value={mood}
                     onChange={(e) => setMood(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleRecommend()}
@@ -363,7 +363,7 @@ function App() {
 
             {/* SUGGESTED PROMPTS */}
             {!hasSearched && (
-               <div className="px-2 md:px-4 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+               <div className="px-2 md:px-4 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                   <p className="text-gray-500 text-xs md:text-sm mb-3 md:mb-4">Or try these:</p>
                   <div className="flex flex-wrap justify-center gap-2 md:gap-3">
                      {SUGGESTED_PROMPTS.map((prompt, idx) => (
