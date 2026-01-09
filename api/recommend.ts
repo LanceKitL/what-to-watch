@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -27,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Use the fast, free model
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" } 
     });
 

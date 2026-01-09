@@ -21,14 +21,13 @@ interface MovieDetails extends Movie {
 }
 
 const SUGGESTED_PROMPTS = [
-  "Mind-bending psychological thrillers 🧠",
-  "Nakakakilig na enemies-to-lovers trope ❤️",
-  "Cozy rainy day movies with jazz vibes 🎷",
-  "Tagalog horror na may plot twist 👻",
-  "Inspiring movies for programmers 💻",
-  "Road trip kasama ang barkada 🚐",
-  "Studio Ghibli aesthetic but live action 🍃",
-  "Underdog sports movies 🥊"
+  "Mind-bending psychological thrillers",
+  "What movie would change my perspective for a day?",
+  "Cozy rainy day movies with jazz vibes",
+  "Tagalog horror na may magandang plot twist",
+  "Inspiring movies for programmers",
+  "A film that makes me rethink life at 2 a.m.",
+  "A hidden gem that feels smarter than it looks.",
 ];
 
 function App() {
@@ -46,12 +45,10 @@ function App() {
   const [tempWinner, setTempWinner] = useState<Movie | null>(null);
   const [revealStage, setRevealStage] = useState<0 | 1 | 2>(0);
   
-  // 👁️ NEW: Visit Counter State
   const [visits, setVisits] = useState<number | null>(null);
 
   const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 
-  // 👁️ NEW: Fetch Global Visit Count on Load
   useEffect(() => {
     const updateCounter = async () => {
       try {
@@ -401,7 +398,8 @@ function App() {
                     <div className="absolute inset-4 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 animate-pulse"></div>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-xl font-medium text-gray-200">picking a movie that you will enjoy...</p>
+                    <p className="text-xl font-bold text-gray-200">Selecting movies for you...</p>
+                    <p className="text-md font-normal text-gray-300">We pick movies using scores and reviews from Rotten Tomatoes, IMDb, and more</p>
                   </div>
                 </div>
               </div>
@@ -435,7 +433,7 @@ function App() {
                     )}
 
                     {/* Movie Poster */}
-                    <div className="relative aspect-[2/3] overflow-hidden">
+                    <div className="relative aspect-[2/3] overflow-hidden movie-card">
                       <img
                         src={movie.poster_path 
                           ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
@@ -470,58 +468,6 @@ function App() {
         )}
       </div>
 
-      <style>{`
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(20px, -50px) scale(1.1); }
-          50% { transform: translate(-20px, 20px) scale(0.9); }
-          75% { transform: translate(50px, 50px) scale(1.05); }
-        }
-        
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(-360deg); }
-        }
-        
-        /* Hide Scrollbar but keep functionality */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #0a0118; 
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #4c1d95; 
-            border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #6d28d9; 
-        }
-
-        .animate-blob { animation: blob 7s infinite; }
-        .animate-fade-in { animation: fade-in 1s ease-out; }
-        .animate-fade-in-up { animation: fade-in-up 0.6s ease-out backwards; }
-        .animate-spin-slow { animation: spin-slow 3s linear infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
-
         {/* ROULETE START BUTTON */}
         {roulete.length > 0 && !loading && !isShuffling && (
           <div className="fixed bottom-10 right-6 z-40 animate-fade-in-up">
@@ -542,7 +488,7 @@ function App() {
 
       <footer className="absolute bottom-0 left-0 right-0 z-20 px-4 sm:px-6 py-4 border-t border-purple-800/30 backdrop-blur-sm text-center text-gray-500 text-sm">
         <p>
-          &copy; Built with 💜 using Vite, React, Tailwind CSS, Google Generative AI, and TMDB API. (MNP1) - kit 🎥
+          &copy; Built with 💜 using Vite, React, Tailwind CSS, Google Generative AI, and TMDB API. (MNP1) - KIT 🎥
         </p>
       </footer>
     </div>
