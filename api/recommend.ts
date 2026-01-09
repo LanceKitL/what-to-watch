@@ -31,9 +31,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       generationConfig: { responseMimeType: "application/json" } 
     });
 
-    const prompt = `Recommend top 20 movies for a user who feels: "${mood}". 
-    Return ONLY a JSON array of strings (titles only). 
-    Example: ["The Matrix", "Inception"]`;
+    const prompt = `
+    Act as a sophisticated film critic and curator. 
+    Recommend a list of 20 movies for a user who describes their mood/vibe as: "${mood}".
+
+    CRITERIA FOR SELECTION:
+    1. Focus on "Review-Based" Quality: Prioritize films with high critical acclaim or strong audience scores (e.g., high Rotten Tomatoes/Letterboxd ratings).
+    2. Include "Hidden Gems": Ensure at least 30-40% of the list consists of underrated, cult classic, or lesser-known masterpieces, not just mainstream blockbusters.
+    3. Diversity: Include a mix of eras (classics to modern) and international films if they fit the vibe perfectly.
+    4. Accuracy: The "emotional resonance" of the film must match the user's mood.
+
+    OUTPUT FORMAT:
+    Return ONLY a raw JSON array of strings (titles only). 
+    Do not use Markdown formatting (no \`\`\`json).
+    Example: ["Portrait of a Lady on Fire", "Whiplash", "The Grand Budapest Hotel"]
+  `;
 
     const result = await model.generateContent(prompt);
     const movies = JSON.parse(result.response.text());
