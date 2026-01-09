@@ -92,7 +92,7 @@ function App() {
               </h1>
               {!hasSearched && (
                 <p className="text-gray-400 text-base sm:text-lg animate-fade-in px-4">
-                  Tell me your mood, I'll find your perfect movie! 
+                  What's your mood today?, I'll find your perfect movie! 
                 </p>
               )}
             </div>
@@ -103,7 +103,7 @@ function App() {
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
                   <input
                     type="text"
-                    placeholder="How do you feel today?"
+                    placeholder="(e.g., adventurous, romantic, thrilling...)"
                     value={mood}
                     onChange={(e) => setMood(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleRecommend()}
@@ -179,7 +179,7 @@ function App() {
                       />
                       
                       {/* Gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/40 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/40 to-transparent opacity-30 group-hover:opacity-60 transition-opacity duration-300"></div>
                       
                       {/* Rating badge */}
                       {movie.vote_average && (
@@ -201,7 +201,7 @@ function App() {
                     </div>
 
                     {/* Hover overlay with description - Hidden on mobile, visible on hover for desktop */}
-                    <div className="hidden sm:flex absolute inset-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/95 to-[#0a0118]/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex-col justify-end p-4 md:p-6">
+                    <div className="hidden sm:flex absolute inset-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/95 to-[#0a0118]/90 backdrop-blur-sm opacity-0 group-hover:opacity-80 transition-all duration-300 flex-col justify-end p-4 md:p-6">
                       <h3 className="font-bold text-lg md:text-xl mb-2 text-white">
                         {movie.title}
                       </h3>

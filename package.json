@@ -13,6 +13,7 @@
     "@google/generative-ai": "^0.24.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@tailwindcss/vite": "^4.1.18",
+    "@vercel/kv": "^3.0.0",
     "@vercel/node": "^5.5.16",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

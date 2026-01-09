@@ -21,13 +21,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // 2. Main Logic
   try {
-    const { mood } = req.body;
+    const { mood, genres } = req.body;
 
     if (!mood) return res.status(400).json({ error: 'Mood is required' });
 
     // Use the fast, free model
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" } 
     });
 
