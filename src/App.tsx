@@ -176,7 +176,7 @@ function App() {
     {isShuffling && tempWinner && (
       <div className="fixed inset-0 z-[60] bg-[#0a0118] flex flex-col items-center justify-center">
          <div className="text-purple-400 font-bold text-2xl mb-8 animate-pulse tracking-widest">
-            CHOOSING YOUR DESTINY...
+            SHUFFLING PICKS...
          </div>
          <div className="w-64 md:w-80 rounded-xl overflow-hidden shadow-[0_0_50px_rgba(168,85,247,0.6)] border-4 border-purple-500 transform scale-105 transition-all duration-75">
             <img
