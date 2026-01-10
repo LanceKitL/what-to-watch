@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!mood) return res.status(400).json({ error: 'Mood is required' });
 
     // Try with the primary model first
-    let AImodel = 'gemini-2.0-flash-lite';
+    let AImodel = 'gemini-3-flash-preview';
     let movies;
     
     try {
@@ -36,13 +36,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const prompt = `
         Act as a sophisticated film critic and curator. 
-        Recommend a list of 20 movies for a user who describes their mood/vibe as: "${mood}".
+        Recommend a movie list for this prompt: "${mood}".
 
         CRITERIA FOR SELECTION:
         1. Focus on "Review-Based" Quality: Prioritize films with high critical acclaim or strong audience scores (e.g., high Rotten Tomatoes/Letterboxd ratings).
         2. Include "Hidden Gems": Ensure at least 30-40% of the list consists of underrated, cult classic, or lesser-known masterpieces, not just mainstream blockbusters.
         3. Diversity: Include a mix of eras (classics to modern) and international films if they fit the vibe perfectly.
         4. Accuracy: The "emotional resonance" of the film must match the user's mood.
+        5. You must provide exactly 20 movie titles.
 
         OUTPUT FORMAT:
         Return ONLY a raw JSON array of strings (titles only). 
@@ -65,13 +66,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const prompt = `
           Act as a sophisticated film critic and curator. 
-          Recommend a list of 20 movies for a user who describes their mood/vibe as: "${mood}".
+          Recommend a movie list for this prompt: "${mood}".
 
           CRITERIA FOR SELECTION:
           1. Focus on "Review-Based" Quality: Prioritize films with high critical acclaim or strong audience scores (e.g., high Rotten Tomatoes/Letterboxd ratings).
           2. Include "Hidden Gems": Ensure at least 30-40% of the list consists of underrated, cult classic, or lesser-known masterpieces, not just mainstream blockbusters.
           3. Diversity: Include a mix of eras (classics to modern) and international films if they fit the vibe perfectly.
           4. Accuracy: The "emotional resonance" of the film must match the user's mood.
+          5. You must provide exactly 20 movie titles.
 
           OUTPUT FORMAT:
           Return ONLY a raw JSON array of strings (titles only). 

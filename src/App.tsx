@@ -21,13 +21,21 @@ interface MovieDetails extends Movie {
 }
 
 const SUGGESTED_PROMPTS = [
-  "Mind-bending psychological thrillers",
-  "What movie would change my perspective for a day?",
-  "Cozy rainy day movies with jazz vibes",
-  "Tagalog horror na may magandang plot twist",
-  "Inspiring movies for programmers",
+  "Mind-bending thrillers",
+  "Romantic comedies from the 2000s",
+  "Top rated marvel movies",
   "A film that makes me rethink life at 2 a.m.",
-  "A hidden gem that feels smarter than it looks.",
+  "Feel-good movies with uplifting endings",
+  "Underrated sci-fi movies with deep philosophical themes",
+];
+
+const mes = [
+  "We pick movies using scores and reviews from Rotten Tomatoes, IMDb, and more",
+  "Finding the perfect movies that match your vibe...",
+  "Curating a list of must-watch films just for you...",
+  "Analyzing cinematic masterpieces to suit your mood...",
+  "Ang cute ni Lance Kit Gom-os :)",
+  "Selecting movies for your unique taste...",
 ];
 
 function App() {
@@ -35,7 +43,8 @@ function App() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  
+  const [loadingmess, setLoadingMessages] = useState("");
+  const [index, setIndex] = useState(0);
   // Roulette States
   const [roulete, setRoulete] = useState<Movie[]>([]);
   const [winner, setWinner] = useState<MovieDetails | null>(null);
@@ -48,6 +57,22 @@ function App() {
   const [visits, setVisits] = useState<number | null>(null);
 
   const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+
+  useEffect(() => {
+    let index = 0;
+
+    const cycleMessages = () => {
+      setLoadingMessages(mes[index]);
+      
+      index = (index + 1) % mes.length;
+    };
+
+    cycleMessages();
+
+    const intervalId = setInterval(cycleMessages, 5000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     const updateCounter = async () => {
@@ -97,7 +122,7 @@ function App() {
 
     } catch (error) {
       console.error(error);
-      alert("AI service is currently unavailable.");
+      alert("Sorry, something went wrong while fetching recommendations. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -398,8 +423,7 @@ function App() {
                     <div className="absolute inset-4 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 animate-pulse"></div>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-xl font-bold text-gray-200">Selecting movies for you...</p>
-                    <p className="text-md font-normal text-gray-300">We pick movies using scores and reviews from Rotten Tomatoes, IMDb, and more</p>
+                    <p className="text-xl font-bold text-gray-200">{loadingmess}</p>
                   </div>
                 </div>
               </div>
@@ -415,7 +439,7 @@ function App() {
                   return (
                   <div
                     key={movie.id}
-                    className={`group relative bg-[#1a0b2e]/60 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 border 
+                    className={`group relative bg-[#1a0b2e]/60 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-101 border 
                     ${isSelected ? 'border-green-500 ring-2 ring-green-500/50 scale-95 opacity-80' : 'border-purple-800/30 hover:shadow-2xl hover:shadow-purple-700/30'}
                     animate-fade-in-up`}
                     style={{ animationDelay: `${index * 50}ms` }}
@@ -437,28 +461,25 @@ function App() {
                       <img
                         src={movie.poster_path 
                           ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
-                          : 'https://placehold.co/500x750/1a0b2e/8b5cf6?text=No+Image'}
+                          : `https://placehold.co/500x750/1a0b2e/8b5cf6?text=${movie.title.split(' ').slice(0,3).join('+')}`}
                         alt={movie.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
                       />
                       
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/40 to-transparent opacity-30 group-hover:opacity-60 transition-opacity duration-300"></div>
                       
                       {movie.vote_average && (
-                        <div className="absolute z-10 top-2 right-2 bg-yellow-500/90 backdrop-blur-sm text-slate-900 font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm flex items-center gap-1">
-                          <span>⭐</span>
+                        <div className="absolute z-10 top-2 right-2 shadow-lg bg-purple-500/30 backdrop-blur-sm text-white font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm flex items-center gap-1">
                           <span>{movie.vote_average.toFixed(1)}</span>
                         </div>
                       )}
+                      <div className="absolute z-10 bottom-2 left-2 backdrop-blur-lg text-white font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm flex group-hover:opacity-0 transition-opacity items-center gap-1 opacity-70">
+                          <span>{movie.release_date?.split('-')[0]}</span>
+                        </div>
                     </div>
-
-                    <div className="p-3 sm:p-4">
-                      <h3 className="font-bold text-sm sm:text-base md:text-lg mb-1 line-clamp-2 group-hover:text-purple-400 transition-colors duration-300">
-                        {movie.title}
-                      </h3>
-                      <p className="text-gray-400 text-xs sm:text-sm">
-                        {movie.release_date?.split('-')[0]}
-                      </p>
+                    {/* description */}
+                    <div className="p-3 sm:p-4 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <p className="text-xs">{movie.overview}</p>
                     </div>
                   </div>
                 )})}
