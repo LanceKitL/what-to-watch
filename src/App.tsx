@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 interface Movie {
@@ -44,7 +44,11 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [loadingmess, setLoadingMessages] = useState("");
-  const [index, setIndex] = useState(0);
+  
+  const [holdingMovieId, setHoldingMovieId] = useState<number | null>(null)
+  const longPressTimer = useRef<any>(null);
+  const isLongPress = useRef(false);
+
   // Roulette States
   const [roulete, setRoulete] = useState<Movie[]>([]);
   const [winner, setWinner] = useState<MovieDetails | null>(null);
@@ -57,6 +61,33 @@ function App() {
   const [visits, setVisits] = useState<number | null>(null);
 
   const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+
+  const handleTouchStart = (id: number) => {
+    isLongPress.current = false; // Reset status
+    longPressTimer.current = setTimeout(() => {
+      // If 500ms passes, we consider it a "Long Press"
+      isLongPress.current = true; 
+      setHoldingMovieId(id); // Show the text
+    }, 500); 
+  };
+
+  // 2. Clears everything when finger lifts
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+    setHoldingMovieId(null); // Hide the text
+  };
+
+  // 3. Decides if we should add to roulette or just ignore
+  const handleSmartClick = (movie: Movie) => {
+    // If it was a long press, DO NOTHING (don't add to roulette)
+    if (isLongPress.current) {
+      return; 
+    }
+    // If it was a short tap, add to roulette
+    handleAddToRoulette(movie);
+  };
 
   useEffect(() => {
     let index = 0;
@@ -429,62 +460,80 @@ function App() {
               </div>
             )}
 
-            {!loading && (<h1 className='font-bold text-lg my-6 text-center text-gray-300'>Click movies to add to your Roulette!</h1>)}
-            
-            {/* Movie Grid */}
-            {!loading && movies.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 pb-24">
-                {movies.map((movie, index) => {
-                  const isSelected = roulete.some(m => m.id === movie.id);
-                  return (
-                  <div
-                    key={movie.id}
-                    className={`group relative bg-[#1a0b2e]/60 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-101 border 
-                    ${isSelected ? 'border-green-500 ring-2 ring-green-500/50 scale-95 opacity-80' : 'border-purple-800/30 hover:shadow-2xl hover:shadow-purple-700/30'}
-                    animate-fade-in-up`}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    onClick={() => handleAddToRoulette(movie)}
-                  >
-                    {/* Selected Indicator */}
-                    {isSelected && (
-                      <div className="absolute z-20 inset-0 bg-green-900/40 flex items-center justify-center">
-                         <div className="bg-green-500 text-white p-2 rounded-full shadow-lg">
-                           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                           </svg>
-                         </div>
-                      </div>
-                    )}
-
-                    {/* Movie Poster */}
-                    <div className="relative aspect-[2/3] overflow-hidden movie-card">
-                      <img
-                        src={movie.poster_path 
-                          ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
-                          : `https://placehold.co/500x750/1a0b2e/8b5cf6?text=${movie.title.split(' ').slice(0,3).join('+')}`}
-                        alt={movie.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
-                      />
-                      
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/40 to-transparent opacity-30 group-hover:opacity-60 transition-opacity duration-300"></div>
-                      
-                      {movie.vote_average && (
-                        <div className="absolute z-10 top-2 right-2 shadow-lg bg-purple-500/30 backdrop-blur-sm text-white font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm flex items-center gap-1">
-                          <span>{movie.vote_average.toFixed(1)}</span>
-                        </div>
-                      )}
-                      <div className="absolute z-10 bottom-2 left-2 backdrop-blur-lg text-white font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm flex group-hover:opacity-0 transition-opacity items-center gap-1 opacity-70">
-                          <span>{movie.release_date?.split('-')[0]}</span>
-                        </div>
-                    </div>
-                    {/* description */}
-                    <div className="p-3 sm:p-4 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <p className="text-xs">{movie.overview}</p>
-                    </div>
-                  </div>
-                )})}
-              </div>
+            {!loading && (
+              <>
+              <h1 className='font-bold text-lg sm:my-6 sm:mt-6 text-center text-gray-300'>Click movies to add to your Roulette!</h1>
+              <p className='text-sm sm:hidden text-gray-500 mb-4 text-center px-4'>Long press movie posters to read sypnosis.</p>
+              
+              </>
             )}
+            
+{/* Movie Grid */}
+{!loading && movies.length > 0 && (
+  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 pb-24">
+    {movies.map((movie, index) => {
+      const isSelected = roulete.some(m => m.id === movie.id);
+      // Check if this specific movie is being held down
+      const isBeingHeld = holdingMovieId === movie.id;
+
+      return (
+      <div
+        key={movie.id}
+        // --- UPDATED EVENTS HERE ---
+        onClick={() => handleSmartClick(movie)}
+        onTouchStart={() => handleTouchStart(movie.id)}
+        onTouchEnd={handleTouchEnd}
+        // ---------------------------
+        className={`group relative bg-[#1a0b2e]/60 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-101 border 
+        ${isSelected ? 'border-green-500 ring-2 ring-green-500/50 scale-95 opacity-80' : 'border-purple-800/30 hover:shadow-2xl hover:shadow-purple-700/30'}
+        animate-fade-in-up select-none`} // Added select-none to prevent text highlighting on mobile
+        style={{ animationDelay: `${index * 50}ms`, WebkitTapHighlightColor: 'transparent' }}
+      >
+        {/* Selected Indicator (Unchanged) */}
+        {isSelected && (
+          <div className="absolute z-20 inset-0 bg-green-900/40 flex items-center justify-center pointer-events-none">
+              <div className="bg-green-500 text-white p-2 rounded-full shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+          </div>
+        )}
+
+        {/* Movie Poster */}
+                <div className="relative aspect-[2/3] overflow-hidden movie-card">
+                  <img
+                    src={movie.poster_path 
+                      ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
+                      : `https://placehold.co/500x750/1a0b2e/8b5cf6?text=${movie.title.split(' ').slice(0,3).join('+')}`}
+                    alt={movie.title}
+                    className={`w-full h-full object-cover transition-transform duration-500 ${isBeingHeld ? 'scale-105' : 'group-hover:scale-103'}`}
+                  />
+                  
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/40 to-transparent opacity-30 group-hover:opacity-60 transition-opacity duration-300"></div>
+                  
+                  {/* Rating Badge (Unchanged) */}
+                  {movie.vote_average && (
+                    <div className="absolute z-10 top-2 right-2 shadow-lg bg-purple-500/30 backdrop-blur-sm text-white font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm flex items-center gap-1">
+                      <span>{movie.vote_average.toFixed(1)}</span>
+                    </div>
+                  )}
+                  {/* Year Badge (Unchanged) */}
+                  <div className={`absolute z-10 bottom-2 left-2 backdrop-blur-lg text-white font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm flex group-hover:opacity-0 ${isBeingHeld ? 'opacity-0' : 'opacity-70'} transition-opacity items-center gap-1`}>
+                      <span>{movie.release_date?.split('-')[0]}</span>
+                    </div>
+                </div>
+
+                {/* --- UPDATED DESCRIPTION LOGIC --- */}
+                <div className={`p-3 sm:p-4 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/90 to-transparent transition-opacity duration-300
+                    ${isBeingHeld ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} 
+                `}>
+                    <p className="text-xs">{movie.overview}</p>
+                </div>
+              </div>
+              )})}
+            </div>
+          )}
           </div>
         )}
       </div>
