@@ -1,0 +1,98 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
+
+// Priority List: Best Quality -> Fastest/Cheapest -> Old Reliable
+const MODEL_CASCADE = [
+  'gemini-3.0-flash-preview',
+  'gemini-2.5-flash',      // Best Quality (Expensive)
+  'gemini-2.5-lite',      // Best Quality (Expensive)
+  'gemini-2.0-flash',       // Newest Standard (Balanced)
+  'gemini-2.0-flash-lite',  // Newest Lite (Fast)
+];
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // 1. CORS Headers
+  res.setHeader('Access-Control-Allow-Credentials', "true");
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  try {
+    const { mood } = req.body;
+    if (!mood) return res.status(400).json({ error: 'Mood is required' });
+
+    let movies = null;
+    let lastError = null;
+
+    // 2. Loop through the models until one works
+    for (const modelName of MODEL_CASCADE) {
+      try {
+        console.log(`Attempting generation with: ${modelName}`);
+        
+        const model = genAI.getGenerativeModel({ 
+          model: modelName,
+          generationConfig: { responseMimeType: "application/json" } 
+        });
+
+        // We use a robust prompt for all models to ensure JSON consistency
+        const prompt = `
+            Act as a Film Festival Programmer. Curate exactly 20 feature films for: "${mood}".
+            
+            CRITERIA:
+            1. Thematic Precision: Atmosphere must explicitly match the users needs.
+            2. Diversity: Max 40% Hollywood. Max 25% post-2010. Include 2 films pre-1970.
+            3. Hidden Gems: At least 8 "Deep Cuts".
+            4. Each recommendation should include a creative reason why it fits the users prompt.
+            
+            OUTPUT FORMAT:
+            Return ONLY a raw JSON array of objects.
+            Structure: [{"title":"Movie Title","reason":"One punchy sentence explaining the vibe match."}]
+            Do not include markdown formatting.
+        `;
+
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
+        
+        // Basic validation before parsing
+        if (!responseText) throw new Error("Empty response");
+        
+        movies = JSON.parse(responseText);
+        
+        // detailed validation to ensure structure is correct
+        if (!Array.isArray(movies) || movies.length === 0 || !movies[0].title) {
+            throw new Error("Invalid JSON structure");
+        }
+
+        console.log(`Success with ${modelName}`);
+        break; // Stop the loop, we got the data
+
+      } catch (error) {
+        console.warn(`Failed with ${modelName}:`, error);
+        lastError = error;
+        // Continue to the next model in the array...
+      }
+    }
+
+    // 3. Final Check
+    if (!movies) {
+      console.error("All models failed.");
+      throw lastError || new Error("All models failed to generate recommendations.");
+    }
+
+    return res.status(200).json({ movies });
+    
+  } catch (error) {
+    console.error("Server Error:", error);
+    return res.status(500).json({ error: 'Failed to fetch recommendations' });
+  }
+}

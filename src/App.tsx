@@ -9,8 +9,10 @@ interface Movie {
   release_date: string;
   vote_average?: number;
   backdrop_path?: string;
+  reason?: string;
 }
 
+// 1. Updated Interface to include Credits (Cast & Crew)
 interface MovieDetails extends Movie {
   watch_providers?: {
     flatrate?: { provider_name: string; logo_path: string }[];
@@ -18,6 +20,10 @@ interface MovieDetails extends Movie {
   };
   genres?: { name: string }[];
   runtime?: number;
+  credits?: {
+    cast: { name: string; profile_path: string | null }[];
+    crew: { job: string; name: string }[];
+  };
 }
 
 const SUGGESTED_PROMPTS = [
@@ -63,53 +69,41 @@ function App() {
   const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 
   const handleTouchStart = (id: number) => {
-    isLongPress.current = false; // Reset status
+    isLongPress.current = false; 
     longPressTimer.current = setTimeout(() => {
-      // If 500ms passes, we consider it a "Long Press"
       isLongPress.current = true; 
-      setHoldingMovieId(id); // Show the text
+      setHoldingMovieId(id); 
     }, 500); 
   };
 
-  // 2. Clears everything when finger lifts
   const handleTouchEnd = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
     }
-    setHoldingMovieId(null); // Hide the text
+    setHoldingMovieId(null); 
   };
 
-  // 3. Decides if we should add to roulette or just ignore
   const handleSmartClick = (movie: Movie) => {
-    // If it was a long press, DO NOTHING (don't add to roulette)
     if (isLongPress.current) {
       return; 
     }
-    // If it was a short tap, add to roulette
     handleAddToRoulette(movie);
   };
 
   useEffect(() => {
     let index = 0;
-
     const cycleMessages = () => {
       setLoadingMessages(mes[index]);
-      
       index = (index + 1) % mes.length;
     };
-
     cycleMessages();
-
     const intervalId = setInterval(cycleMessages, 5000);
-
     return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
     const updateCounter = async () => {
       try {
-        // Using counterapi.dev - a free public counter
-        // 'mnp1-wtw' is your unique namespace, 'visits' is the key
         const res = await fetch('https://api.counterapi.dev/v1/mnp1-wtw/visits/up');
         const data = await res.json();
         setVisits(data.count);
@@ -138,14 +132,19 @@ function App() {
         body: JSON.stringify({ mood: searchMood }),
       });
       
-      const { movies: titles } = await aiResponse.json();
+      const { movies: aiRecommendations } = await aiResponse.json();
 
-      const movieDataPromises = titles.map(async (title: string) => {
+      const movieDataPromises = aiRecommendations.map(async (rec: { title: string, reason: string }) => {
         const tmdbRes = await fetch(
-          `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(title)}`
+          `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(rec.title)}`
         );
         const data = await tmdbRes.json();
-        return data.results[0]; 
+        const tmdbMovie = data.results[0];
+        
+        if (tmdbMovie) {
+            return { ...tmdbMovie, reason: rec.reason };
+        }
+        return undefined;
       });
 
       const fullMovies = await Promise.all(movieDataPromises);
@@ -181,8 +180,9 @@ function App() {
     const selectedMovie = roulete[randomIndex];
 
     try {
+      // 2. Updated API call: added '&append_to_response=credits'
       const detailsRes = await fetch(
-        `https://api.themoviedb.org/3/movie/${selectedMovie.id}?api_key=${TMDB_API_KEY}`
+        `https://api.themoviedb.org/3/movie/${selectedMovie.id}?api_key=${TMDB_API_KEY}&append_to_response=credits`
       );
       const detailsData = await detailsRes.json();
 
@@ -193,7 +193,7 @@ function App() {
       const providers = providerData.results?.PH || providerData.results?.US; 
 
       const finalWinnerData: MovieDetails = {
-        ...selectedMovie,
+        ...selectedMovie, 
         ...detailsData,
         watch_providers: providers
       };
@@ -250,8 +250,8 @@ function App() {
     {winner && !isShuffling ? (
        <div className="fixed inset-0 z-50 bg-[#0a0118] flex items-start md:items-center justify-center overflow-y-auto custom-scrollbar">
          <div 
-            className="fixed inset-0 opacity-20 bg-cover bg-center transition-opacity duration-1000 pointer-events-none"
-            style={{ backgroundImage: `url(https://image.tmdb.org/t/p/original${winner.backdrop_path})` }}
+           className="fixed inset-0 opacity-20 bg-cover bg-center transition-opacity duration-1000 pointer-events-none"
+           style={{ backgroundImage: `url(https://image.tmdb.org/t/p/original${winner.backdrop_path})` }}
          ></div>
 
          <div className="relative z-10 w-full max-w-6xl px-4 py-10 md:py-0 flex flex-col md:flex-row items-center md:items-start justify-center gap-6 md:gap-12 transition-all duration-1000 min-h-min">
@@ -278,7 +278,7 @@ function App() {
                   {winner.title}
                 </h1>
                 
-                <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 md:gap-4 mb-5 md:mb-6 text-xs md:text-base text-gray-300">
+                <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 md:gap-4 mb-3 text-xs md:text-base text-gray-300">
                    {winner.release_date && <span className="bg-purple-900/50 px-3 py-1 rounded-full border border-purple-500/20">{winner.release_date.split('-')[0]}</span>}
                    {winner.runtime && <span className="bg-purple-900/50 px-3 py-1 rounded-full border border-purple-500/20">{winner.runtime} min</span>}
                    <span className="flex items-center gap-1 text-yellow-400 font-bold">
@@ -286,42 +286,69 @@ function App() {
                    </span>
                 </div>
 
-                <p className="text-gray-300 text-sm md:text-lg leading-relaxed mb-6 md:mb-8 max-w-2xl">
+                {/* 3. NEW: Director & Cast Section */}
+                <div className="mb-6 flex flex-col items-center md:items-start gap-1 text-sm md:text-base">
+                    {winner.credits?.crew?.find(c => c.job === 'Director') && (
+                        <p className="text-gray-400">
+                            <span className="text-purple-400 font-bold">Directed by: </span> 
+                            <span className="text-white">{winner.credits.crew.find(c => c.job === 'Director')?.name}</span>
+                        </p>
+                    )}
+                    
+                    {winner.credits?.cast && winner.credits.cast.length > 0 && (
+                        <p className="text-gray-400">
+                             <span className="text-purple-400 font-bold">Starring: </span>
+                             <span className="text-white">
+                                {winner.credits.cast.slice(0, 3).map(c => c.name).join(", ")}
+                             </span>
+                        </p>
+                    )}
+
+                    {winner.genres && winner.genres.length > 0 && (
+                        <p className="text-gray-400">
+                            <span className="text-purple-400 font-bold">Genres: </span>
+                            <span className="text-white">
+                                {winner.genres.map(g => g.name).join(", ")}
+                                  </span>
+                                  </p>
+                                  )}
+                </div>
+
+                <p className="text-gray-300 text-sm md:text-lg leading-relaxed mb-6 max-w-2xl">
                   {winner.overview}
                 </p>
 
-                {winner.watch_providers && (winner.watch_providers.flatrate || winner.watch_providers.buy) && (
-                  <div className="mb-8 w-full">
-                    <h3 className="text-purple-300 font-semibold mb-3 uppercase tracking-wider text-xs md:text-sm">Where to Watch</h3>
-                    <div className="flex flex-wrap justify-center md:justify-start gap-3 md:gap-4">
-                      {winner.watch_providers.flatrate?.map((provider, i) => (
-                        <img 
-                          key={i} 
-                          src={`https://image.tmdb.org/t/p/original${provider.logo_path}`} 
-                          alt={provider.provider_name}
-                          className="w-10 h-10 md:w-12 md:h-12 rounded-lg shadow-lg hover:scale-110 transition-transform cursor-help"
-                          title={provider.provider_name}
-                        />
-                      ))}
-                      {(!winner.watch_providers.flatrate && winner.watch_providers.buy) && winner.watch_providers.buy.slice(0,3).map((provider, i) => (
-                         <img 
-                         key={i} 
-                         src={`https://image.tmdb.org/t/p/original${provider.logo_path}`} 
-                         alt={provider.provider_name}
-                         className="w-10 h-10 md:w-12 md:h-12 rounded-lg shadow-lg hover:scale-110 transition-transform cursor-help"
-                         title={`Buy/Rent on ${provider.provider_name}`}
-                       />
-                      ))}
+                {winner.reason && (
+                    <div className="mb-8 p-4 bg-purple-900/20 rounded-lg border-l-4 border-purple-500 max-w-2xl text-left">
+                        <h3 className="text-purple-300 font-bold uppercase text-xs tracking-wider mb-1">
+                            Why we picked this for you
+                        </h3>
+                        <p className="text-purple-100 italic text-sm md:text-base">
+                            "{winner.reason}"
+                        </p>
                     </div>
-                  </div>
                 )}
 
                 <button 
                   onClick={handleReset}
-                  className="bg-white text-purple-900 font-bold px-8 py-3 rounded-full hover:bg-purple-100 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.3)] transform hover:scale-105 active:scale-95"
+                  className="cursor-pointer transition-all bg-white text-purple-900 font-bold px-8 py-3 rounded-full hover:bg-purple-100 shadow-[0_0_20px_rgba(255,255,255,0.3)] transform hover:scale-101 active:scale-95"
                 >
                   Pick Again
                 </button>
+                <div className='flex flex-wrap my-7 gap-4'>
+                <button 
+                  onClick={() => window.open(`https://xprime.today/search?query=${winner.title}`, '_blank')}
+                  className="cursor-pointer transition-all border text-white font-bold px-8 py-3 rounded-full  shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:text-blue-400 hover:border-blue-400 transform hover:scale-101 active:scale-95"
+                >
+                  Watch on XPrime
+                </button>
+                <button 
+                  onClick={() => window.open(`https://www.netflix.com/search?q=${winner.title}`, '_blank')}
+                  className="cursor-pointer transition-all border  text-white font-bold px-8 py-3 rounded-full  shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:text-red-400 hover:border-red-400 transform hover:scale-101 active:scale-95"
+                >
+                  Watch on Netflix
+                </button>
+                </div>
             </div>
          </div>
        </div>
@@ -463,7 +490,7 @@ function App() {
             {!loading && (
               <>
               <h1 className='font-bold text-lg sm:my-6 sm:mt-6 text-center text-gray-300'>Click movies to add to your Roulette!</h1>
-              <p className='text-sm sm:hidden text-gray-500 mb-4 text-center px-4'>Long press movie posters to read sypnosis.</p>
+              <p className='text-sm sm:hidden text-gray-500 mb-4 text-center px-4'>Long press movie posters to read why we picked it.</p>
               
               </>
             )}
@@ -473,23 +500,20 @@ function App() {
   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 pb-24">
     {movies.map((movie, index) => {
       const isSelected = roulete.some(m => m.id === movie.id);
-      // Check if this specific movie is being held down
       const isBeingHeld = holdingMovieId === movie.id;
 
       return (
       <div
         key={movie.id}
-        // --- UPDATED EVENTS HERE ---
         onClick={() => handleSmartClick(movie)}
         onTouchStart={() => handleTouchStart(movie.id)}
         onTouchEnd={handleTouchEnd}
-        // ---------------------------
         className={`group relative bg-[#1a0b2e]/60 backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-101 border 
         ${isSelected ? 'border-green-500 ring-2 ring-green-500/50 scale-95 opacity-80' : 'border-purple-800/30 hover:shadow-2xl hover:shadow-purple-700/30'}
-        animate-fade-in-up select-none`} // Added select-none to prevent text highlighting on mobile
+        animate-fade-in-up select-none`}
         style={{ animationDelay: `${index * 50}ms`, WebkitTapHighlightColor: 'transparent' }}
       >
-        {/* Selected Indicator (Unchanged) */}
+        {/* Selected Indicator */}
         {isSelected && (
           <div className="absolute z-20 inset-0 bg-green-900/40 flex items-center justify-center pointer-events-none">
               <div className="bg-green-500 text-white p-2 rounded-full shadow-lg">
@@ -512,23 +536,26 @@ function App() {
                   
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/40 to-transparent opacity-30 group-hover:opacity-60 transition-opacity duration-300"></div>
                   
-                  {/* Rating Badge (Unchanged) */}
+                  {/* Rating Badge */}
                   {movie.vote_average && (
                     <div className="absolute z-10 top-2 right-2 shadow-lg bg-purple-500/30 backdrop-blur-sm text-white font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm flex items-center gap-1">
                       <span>{movie.vote_average.toFixed(1)}</span>
                     </div>
                   )}
-                  {/* Year Badge (Unchanged) */}
+                  {/* Year Badge */}
                   <div className={`absolute z-10 bottom-2 left-2 backdrop-blur-lg text-white font-bold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm flex group-hover:opacity-0 ${isBeingHeld ? 'opacity-0' : 'opacity-70'} transition-opacity items-center gap-1`}>
                       <span>{movie.release_date?.split('-')[0]}</span>
                     </div>
                 </div>
 
-                {/* --- UPDATED DESCRIPTION LOGIC --- */}
-                <div className={`p-3 sm:p-4 absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0a0118] via-[#0a0118]/90 to-transparent transition-opacity duration-300
+                {/* AI Insight Reason on Hover */}
+                <div className={`p-3 sm:p-4 absolute bottom-0 left-0 right-0 top-0 bg-[#0a0118]/90 flex flex-col justify-center items-center text-center transition-opacity duration-300
                     ${isBeingHeld ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} 
                 `}>
-                    <p className="text-xs">{movie.overview}</p>
+                    <p className="text-purple-400 text-xs font-bold uppercase mb-2 tracking-wider">AI Insight</p>
+                    <p className="text-sm text-gray-200 leading-relaxed italic">
+                        "{movie.reason || movie.overview}"
+                    </p>
                 </div>
               </div>
               )})}
