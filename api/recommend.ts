@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
 function test(mood: String){
   return `Act as a Film Festival Programmer and Cinema Historian with an encyclopedic knowledge of global cinema.
-  Curate a list of exactly 50 feature films based on this specific mood/vibe/query: "${mood}".
+  Curate a list of exactly 14 feature films based on this specific mood/vibe/query: "${mood}".
   
   SELECTION ALGORITHM & CRITERIA:
   1.  Thematic Precision (Highest Priority): The film's atmosphere, pacing, color palette, and narrative texture must explicitly match the requested "${mood}". Prioritize "vibe accuracy" over general critical acclaim.
@@ -14,7 +14,7 @@ function test(mood: String){
       * Include at least 2 films from before 1970.
   3.  The "Hidden Gem" Factor: At least 8 titles must be "Deep Cuts" (films with excellent reputation among cinephiles but low mainstream visibility/box office).
   4.  Quality Control: While prioritizing mood, ensure films are competent. Avoid "trash" cinema unless the mood explicitly asks for "so bad it's good."
-  5. create a reason that's based on the reviews, and why people recommends it to watch.
+  5. Tell the user why the film is chosen, and what typicall the reviews say about it, what will they feel and experience when watching it.
 
   OUTPUT FORMAT:
   Return ONLY a valid, minified JSON array of strings (titles only).
